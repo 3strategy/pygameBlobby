@@ -15,6 +15,8 @@ class Player(SharedSprite):
         self.side = side
         self.speed = speed
         self.horisontal_speed = speed * 0.3
+        self.state = "still"
+        self.h_state = "still"
 
         if side == "left":
             SharedSprite.__init__(self, 'blobbyred.webp',0.4,True)
@@ -34,11 +36,16 @@ class Player(SharedSprite):
     def move(self, event: pygame.event):
         if event.type == KEYDOWN:  # we only want to trigger a move on keydown.
 
-            if event.key == self.rightKey:  # and (self.h_state == "still" or self.h_state == "moveleft"):
+            if event.key == self.rightKey:
                 self.moveright()
-            elif event.key == self.leftKey:  # and (self.h_state == "still" or self.h_state == "moveright"):
+            elif event.key == self.leftKey:
                 self.moveleft()
 
+        elif event.type == KEYUP:
+
+            if self.h_state == "moveright" and event.key == self.rightKey \
+                    or (self.h_state == "moveleft" and event.key == self.leftKey):
+                self.h_standstill()
 
     def update(self):
         self.rect = self.rect.move(self.dX, self.dY)
@@ -51,3 +58,7 @@ class Player(SharedSprite):
     def moveleft(self):
         self.dX = -self.horisontal_speed
         self.h_state = "moveleft"
+
+    def h_standstill(self):
+        self.dX = 0
+        self.h_state = "still"

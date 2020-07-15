@@ -30,6 +30,12 @@ def main():
     playersprites = pygame.sprite.RenderPlain(players)
     ballsprites = pygame.sprite.RenderPlain(ball, pointer)
 
+    # Display some text
+    font = pygame.font.Font(None, 36)
+    text = font.render("Hello There", 1, (250, 250, 250))
+    textpos = text.get_rect()
+    textpos.centerx = background.get_rect().centerx
+
     # Initialise clock
     clock = pygame.time.Clock()
 
@@ -46,7 +52,13 @@ def main():
             for player in players:
                 player.move(event)
 
+
+        info = f'{players[0].h_state}  {players[1].h_state}'
+        # note the : after which comes the formmating (here .1f for 1 decimal point)
+        text = font.render(info, 1, (250, 250, 250))
+
         screen.blit(background, (0, 0))  # this acts as a clear screen (try without and see how everything smears)
+        screen.blit(text, textpos)  # if we blit to background we are smearing.
 
         playersprites.update()  # it matters if you update the player before or after the ball.
         ballsprites.update()  # calls the update method on sprite
