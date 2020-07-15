@@ -18,6 +18,10 @@ class Player(SharedSprite):
         self.state = "still"
         self.h_state = "still"
 
+        self.canjump = True
+        self.score = 0
+        self.gravity = gravity * 3
+
         if side == "left":
             SharedSprite.__init__(self, 'blobbyred.webp',0.4,True)
             self.sign = 1
@@ -32,6 +36,9 @@ class Player(SharedSprite):
             self.downKey = K_DOWN
             self.leftKey = K_LEFT
             self.rightKey = K_RIGHT
+
+
+
 
     def move(self, event: pygame.event):
         if event.type == KEYDOWN:  # we only want to trigger a move on keydown.

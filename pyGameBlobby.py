@@ -53,7 +53,8 @@ def main():
                 player.move(event)
 
 
-        info = f'{players[0].h_state}  {players[1].h_state}'
+        info = f'{players[0].score}  :  {players[1].score}'
+        info = f'{players[0].state}  {info}  {players[1].state}'
         # note the : after which comes the formmating (here .1f for 1 decimal point)
         text = font.render(info, 1, (250, 250, 250))
 
