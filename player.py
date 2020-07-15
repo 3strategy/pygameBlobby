@@ -54,14 +54,19 @@ class Player(SharedSprite):
                 self.h_standstill()
 
     def update(self):
-        self.dY += self.gravity
+        if self.state == "moveup":
+            self.dY += 0.6 * self.gravity
+        else:
+            self.dY += self.gravity
         newpos = self.rect.move(self.dX, self.dY)
+
         if newpos.bottom >= self.area.bottom: #player touches the floor
             newpos.bottom = self.area.bottom
-            # if self.state == 'moveup':
-            #     self.dY = -self.speed
-            # else:
-            self.dY = 0
+            if self.state == 'moveup':
+                self.dY = -self.speed
+            else:
+                self.dY = 0
+            self.canjump = True
 
         self.rect = newpos
         pygame.event.pump()
@@ -69,9 +74,9 @@ class Player(SharedSprite):
 
     def moveup(self):
         # these are only called once, even if key is held.
-        #if self.canjump:
-        self.dY = -self.speed
-            #self.canjump = False
+        if self.canjump:
+            self.dY = -self.speed
+            self.canjump = False
         self.state = "moveup"  # register the "intention" in any case: you will not get another keyboard hint...
 
     def standstill(self):
