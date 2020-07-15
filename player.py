@@ -35,6 +35,8 @@ class Player(SharedSprite):
 
     def move(self, event: pygame.event):
         if event.type == KEYDOWN:  # we only want to trigger a move on keydown.
+            if event.key == self.upKey:
+                self.moveup()
 
             if event.key == self.rightKey:
                 self.moveright()
@@ -42,14 +44,38 @@ class Player(SharedSprite):
                 self.moveleft()
 
         elif event.type == KEYUP:
+            # some key up should trigger "stand still", (e.g. the upKey is depressed while moving up)
+            if self.state == "moveup" and event.key == self.upKey \
+                    or (self.state == "movedown" and event.key == self.downKey):
+                self.standstill()
 
             if self.h_state == "moveright" and event.key == self.rightKey \
                     or (self.h_state == "moveleft" and event.key == self.leftKey):
                 self.h_standstill()
 
     def update(self):
-        self.rect = self.rect.move(self.dX, self.dY)
+        self.dY += self.gravity
+        newpos = self.rect.move(self.dX, self.dY)
+        if newpos.bottom >= self.area.bottom: #player touches the floor
+            newpos.bottom = self.area.bottom
+            # if self.state == 'moveup':
+            #     self.dY = -self.speed
+            # else:
+            self.dY = 0
+
+        self.rect = newpos
         pygame.event.pump()
+
+
+    def moveup(self):
+        # these are only called once, even if key is held.
+        #if self.canjump:
+        self.dY = -self.speed
+            #self.canjump = False
+        self.state = "moveup"  # register the "intention" in any case: you will not get another keyboard hint...
+
+    def standstill(self):
+        self.state = "still"
 
     def moveright(self):
         self.dX = self.horisontal_speed
