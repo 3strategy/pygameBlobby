@@ -52,10 +52,11 @@ def main():
             for player in players:
                 player.move(event)
 
-
-        info = f'{players[0].score}  :  {players[1].score}'
-        info = f'{players[0].state}  {info}  {players[1].state}'
-        # note the : after which comes the formmating (here .1f for 1 decimal point)
+        p0,p1=players[0],players[1]
+        info = f'score: {p0.score}  :  {p1.score}'
+        info = f'{p0.state} dX:{p0.dX:.1f}  {info}  {p1.state} dX:{p1.dX:.1f}'
+        info = f'{info} / Ball dX:{ball.dX:.1f} dY:{ball.dY:.1f}'
+        # note the : after which comes the formatting (here .1f for 1 decimal point)
         text = font.render(info, 1, (250, 250, 250))
 
         screen.blit(background, (0, 0))  # this acts as a clear screen (try without and see how everything smears)

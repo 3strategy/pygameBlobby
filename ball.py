@@ -19,6 +19,9 @@ class Ball(SharedSprite):
         self.point_started = False
         self.point_scored = False
 
+        self.dyfix = self.rect.height/2
+        self.dxfix = self.rect.width/2
+
 
     def score(self, ordinal):
         if not self.point_scored:  # prevent double scoring
@@ -35,12 +38,42 @@ class Ball(SharedSprite):
         newpos = self.rect.move(self.dX, self.dY)
 
         #Test if touching the floor
-        if newpos.bottom >= self.area.bottom: #player touches the floor
+        if newpos.bottom >= self.area.bottom: #Ball touches the floor
             newpos.bottom = self.area.bottom #repositioning to a valid position.
-            self.dY = -self.dY
+            self.dY = -0.6 * self.dY
 
             if not self.point_scored:  # give score according to court side:
                 side = self.area.centerx - self.rect.centerx > 0
                 self.score(side)
+
+
+        # Ball off court's sides:
+        if (newpos.right > self.area.right and self.dX > 0) or (newpos.left < 0 and self.dX < 0):
+            newpos.left -= self.dX
+            self.rect.left -= self.dX
+            self.dX = -self.dX
+            return
+
+
+
+
+        # Collision testing
+        for player in self.players:
+            # overlap gets the result of the collision test and then an 'if' checks overlap
+            # if there was no collision overlap will be None (i.e. False)
+            # if there is a collision, overlap contains the information.
+            if overlap := testoverlap(player, self): # EXPRESSION ASSIGNMENT
+            # handle the collision:
+                # calculating the angle of collision (to bounce the ball accordingly).
+                impact_gamma = angle_ofdxdy((overlap[0] - self.dxfix, (overlap[1] - self.dyfix)))[0]
+
+                x = (self.dX, self.dY), (player.dX, player.dY)
+                # the effect of the collision is calculated by Impulse Equasions.
+                # dX and dY of ball and player will be sent as input,
+                # and also be returned back from the impulse function.
+                ((self.dX, self.dY), (player.dX, player.dY)) = calc_impulse_xy1xy2(x, 1, 3.5, impact_gamma)
+
+                break # no need to check the other player.
+
 
         self.rect = newpos
