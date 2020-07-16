@@ -39,6 +39,20 @@ class Player(SharedSprite):
 
         self.gravity = gravity * 3
 
+
+        self.reinit()
+
+    def reinit(self):
+        self.canjump = True
+        self.num_shots = 0
+        self.standstill()
+        if self.side == "left":
+            self.rect.midbottom = (self.area.midleft[0] + self.initial_wall_dist, self.area.bottom)
+
+        elif "right" == self.side:
+            self.rect.midbottom = (self.area.midright[0] - self.initial_wall_dist, self.area.bottom)
+            self.sign = -1
+
     def move(self, event: pygame.event):
         if event.type == KEYDOWN:  # we only want to trigger a move on keydown.
             if event.key == self.upKey:
@@ -64,10 +78,10 @@ class Player(SharedSprite):
 
         if self.dX != 0:  # Player horisontal position checks:
             # avoid approaching the net   and avoid exiting the field
-            if abs(self.area.centerx - newpos.centerx) < Player.netApproach:
-                newpos.centerx -= self.dX
-                self.dX = 0
-            elif abs(self.area.centerx - newpos.centerx) > self.area.centerx + Player.sideApproach:
+            if not Player.netApproach < abs(
+                    self.area.centerx - newpos.centerx) < self.area.centerx + Player.sideApproach:
+                # The preferred way of wrapping long lines is by using Python's
+                # implied line continuation inside parentheses, brackets and braces.
                 newpos.centerx -= self.dX
                 self.dX = 0
 

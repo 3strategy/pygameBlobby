@@ -21,6 +21,23 @@ class Ball(SharedSprite):
 
         self.dyfix = self.rect.height / 2
         self.dxfix = self.rect.width / 2
+        self.startY = 320 * basescale
+
+        self.reinit()
+
+    # call this each time a new point begins, to reset parameters and position.
+    def reinit(self):
+        self.point_started = False
+        self.point_scored = False
+        self.dX, self.dY = 0.0, 0 * basescale
+        if self.lastPlayer:
+            self.rect.center = (self.initial_wall_dist, self.startY)
+        else:
+            self.rect.center = (self.area.midright[0] - self.initial_wall_dist, self.startY)
+
+        for player in self.players:
+            player.reinit()
+
 
     def score(self, ordinal):
         if not self.point_scored:  # prevent double scoring
@@ -44,6 +61,9 @@ class Ball(SharedSprite):
             if not self.point_scored:  # give score according to court side:
                 side = self.area.centerx - self.rect.centerx > 0
                 self.score(side)
+
+                self.reinit() # start a new point.
+                return # a crucial return.
 
         # Ball off court's sides:
         if (newpos.right > self.area.right and self.dX > 0) or (newpos.left < 0 and self.dX < 0):
