@@ -9,7 +9,8 @@ except ImportError as err:
 
 class Player(SharedSprite):
     """Movable blobby person that hits the ball"""
-
+    netApproach = 49 * basescale
+    sideApproach = 39 * basescale
 
     def __init__(self, side):
         self.side = side
@@ -20,25 +21,23 @@ class Player(SharedSprite):
 
         self.canjump = True
         self.score = 0
-        self.gravity = gravity * 3
 
         if side == "left":
-            SharedSprite.__init__(self, 'blobbyred.webp',0.4,True)
+            SharedSprite.__init__(self, 'blobbyred.webp', 0.4, True)
             self.sign = 1
             self.upKey = K_d
             self.downKey = K_LALT
             self.leftKey = K_a
             self.rightKey = K_c
         elif "right" == side:
-            SharedSprite.__init__(self, 'blobbygreen.webp',0.4)
+            SharedSprite.__init__(self, 'blobbygreen.webp', 0.4)
             self.sign = -1
             self.upKey = K_UP
             self.downKey = K_DOWN
             self.leftKey = K_LEFT
             self.rightKey = K_RIGHT
 
-
-
+        self.gravity = gravity * 3
 
     def move(self, event: pygame.event):
         if event.type == KEYDOWN:  # we only want to trigger a move on keydown.
@@ -61,13 +60,23 @@ class Player(SharedSprite):
                 self.h_standstill()
 
     def update(self):
+        newpos = self.rect.move(self.dX, self.dY)
+
+        if self.dX != 0:  # Player horisontal position checks:
+            # avoid approaching the net   and avoid exiting the field
+            if abs(self.area.centerx - newpos.centerx) < Player.netApproach:
+                newpos.centerx -= self.dX
+                self.dX = 0
+            elif abs(self.area.centerx - newpos.centerx) > self.area.centerx + Player.sideApproach:
+                newpos.centerx -= self.dX
+                self.dX = 0
+
         if self.state == "moveup":
             self.dY += 0.6 * self.gravity
         else:
             self.dY += self.gravity
-        newpos = self.rect.move(self.dX, self.dY)
 
-        if newpos.bottom >= self.area.bottom: #player touches the floor
+        if newpos.bottom >= self.area.bottom:  # player touches the floor
             newpos.bottom = self.area.bottom
             if self.state == 'moveup':
                 self.dY = -self.speed
@@ -77,7 +86,6 @@ class Player(SharedSprite):
 
         self.rect = newpos
         pygame.event.pump()
-
 
     def moveup(self):
         # these are only called once, even if key is held.
