@@ -39,7 +39,8 @@ class Ball(SharedSprite):
             player.reinit()
 
 
-    def score(self, ordinal):
+    def score(self):
+        ordinal = self.area.centerx > self.rect.centerx
         if not self.point_scored:  # prevent double scoring
             if ordinal == self.lastPlayer:  # ball holder lost the point - switch ball.
                 self.lastPlayer = not self.lastPlayer
@@ -48,9 +49,9 @@ class Ball(SharedSprite):
             self.point_scored = True
 
     def update(self, *args):
-
-        # if self.point_started and self.dY < 14 * basescale:
-        self.dY += self.gravity
+        oldpos = self.rect
+        if self.point_started and self.dY < 14 * basescale:
+            self.dY += self.gravity
         newpos = self.rect.move(self.dX, self.dY)
 
         # Test if touching the floor
@@ -58,11 +59,11 @@ class Ball(SharedSprite):
             newpos.bottom = self.area.bottom  # repositioning to a valid position.
             self.dY = -0.6 * self.dY
 
-            if not self.point_scored:  # give score according to court side:
-                side = self.area.centerx - self.rect.centerx > 0
-                self.score(side)
+            # give score according to court side:
+            self.score()
 
-                self.reinit() # start a new point.
+            if self.dY < 2 and self.dY > -2:
+                self.reinit()
                 return # a crucial return.
 
         # Ball off court's sides:
@@ -75,8 +76,7 @@ class Ball(SharedSprite):
         # Net colision detection בדיקת התנגשות ברשת
         if overlap_net := testoverlap(self.net, self):
             if overlap_net[1] < 68 * basescale:  # real net impact means ball is touched on the side
-                side = self.area.centerx - self.rect.centerx > 0
-                self.score(side)  # give score according to court side:
+                self.score()
                 self.rect.left -= self.dX
                 self.dX = -0.3 * self.dX
                 return
@@ -85,12 +85,14 @@ class Ball(SharedSprite):
                 self.rect = self.rect.move(self.dX, -10 * basescale)
                 return
 
+        self.rect = newpos
         # Player Collision testing
         for player in self.players:
             # overlap gets the result of the collision test and then an 'if' checks overlap
             # if there was no collision overlap will be None (i.e. False)
             # if there is a collision, overlap contains the information.
             if overlap := testoverlap(player, self):  # EXPRESSION ASSIGNMENT
+                self.point_started = True # from here on gravity will apply.
                 # handle the collision:
                 # calculating the angle of collision (to bounce the ball accordingly).
                 impact_gamma = angle_ofdxdy((overlap[0] - self.dxfix, (overlap[1] - self.dyfix)))[0]
@@ -100,7 +102,7 @@ class Ball(SharedSprite):
                 # dX and dY of ball and player will be sent as input,
                 # and also be returned back from the impulse function.
                 ((self.dX, self.dY), (player.dX, player.dY)) = calc_impulse_xy1xy2(x, 1, 3.5, impact_gamma)
+                self.rect = oldpos
+                return  # no need to check the other player.
 
-                break  # no need to check the other player.
 
-        self.rect = newpos
