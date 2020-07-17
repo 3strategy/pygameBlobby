@@ -45,7 +45,8 @@ class SharedSprite(pygame.sprite.Sprite):
 
         self.image = pygame.transform.scale(self.image, (int(self.rect.width*basescale*scale), int(self.rect.height*basescale*scale)))
         self.rect = self.image.get_rect()
-
+        self.oldpos = self.rect
+        self.newpos = self.rect
         screen = pygame.display.get_surface()
         self.area = screen.get_rect()
         self.area.centery -= 50 * basescale     #move logical area up
@@ -56,8 +57,31 @@ class SharedSprite(pygame.sprite.Sprite):
         self.initial_wall_dist = 150 * basescale
         self.boost = False
 
+    def reinit(self):
+        self.dX = 0.0
+        self.dY = 0.0
+
+    def update(self):
+        # for rolling back in case of collision
+        self.oldpos = self.rect
+
+        # move Create a copy of rect. Only the copy is moved to the new pos.
+        self.newpos = self.rect.move(self.dX, self.dY)
+
+        # Point rect to the same object as newpos:
+        # Any action on newpos will move rect...(unlike before).
+        self.rect = self.newpos
+
+    def rollback (self, other_object = None):
+        self.rect = self.oldpos
+        self.newpos = self.oldpos
+        if other_object:
+            # tiny recursive call.
+            # recursivity stops after 1 iteration. why?
+            other_object.rollback()
+
     def accellerate(self, initialspeed, profile):
-        # apply accelleration function:
+        # apply acceleration function:
         y = initialspeed
         if profile == 1:
             a = - 0.000008 * y ** 4 - 0.000146561 * y ** 3 + 0.000800701 * y ** 2 - 0.0853439 * y - 2

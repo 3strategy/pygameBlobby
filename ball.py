@@ -29,7 +29,6 @@ class Ball(SharedSprite):
     def reinit(self):
         self.point_started = False
         self.point_scored = False
-        self.dX, self.dY = 0.0, 0 * basescale
         if self.lastPlayer:
             self.rect.center = (self.initial_wall_dist, self.startY)
         else:
@@ -37,6 +36,8 @@ class Ball(SharedSprite):
 
         for player in self.players:
             player.reinit()
+
+        SharedSprite.reinit(self)
 
     def score(self):
         ordinal = self.area.centerx > self.rect.centerx
@@ -48,17 +49,17 @@ class Ball(SharedSprite):
             self.point_scored = True
 
     def update(self, *args):
-        oldpos = self.rect
+        SharedSprite.update(self)
+        newpos, area = self.newpos, self.area
+        # you can do the above pointing but you cannot do:
+        # dY,dX = self.dY, self.dX  # WHY?
         if self.point_started and self.dY < 14 * basescale:
             self.dY += self.gravity
-        newpos = self.rect.move(self.dX, self.dY)
 
-        # Test if touching the floor
-        if newpos.bottom >= self.area.bottom:  # Ball touches the floor
-            newpos.bottom = self.area.bottom  # repositioning to a valid position.
+        # Test if touching the floor האם הכדור נוגע ברצפה
+        if newpos.bottom >= area.bottom:  # Ball touches the floor
+            newpos.bottom = area.bottom  # repositioning to a valid position.
             self.dY = -0.6 * self.dY
-
-            # give score according to court side:
             self.score()
 
             # once point was scored, start a new point when ball settles down
@@ -66,38 +67,30 @@ class Ball(SharedSprite):
                 self.reinit()
                 return  # a crucial return.
 
-        # Test if flying too high
-        elif self.rect.top < -200 * basescale and self.dY < 0:
-            print(f'sky high {self.rect.top} dX:{self.dX:.1f} dY:{self.dY:.1f}')
-            self.rect.top -= self.dY
+        # Test if flying too high בדיקה אם הכדור עף גבוה מדי
+        elif newpos.top < -200 * basescale and self.dY < 0:
+            print(f'sky high {newpos.top} dX:{self.dX:.1f} dY:{self.dY:.1f}')
+            newpos.top -= self.dY
             self.dY = -self.dY
 
-        # Ball off court's sides:
-        if (newpos.right > self.area.right and self.dX > 0) or (newpos.left < 0 and self.dX < 0):
+        # Ball off court's sides: בדיקה אם הכדור פוגע בקירות
+        if (newpos.right > area.right and self.dX > 0) or (newpos.left < 0 and self.dX < 0):
             newpos.left -= self.dX
-            self.rect.left -= self.dX
             self.dX = -self.dX
-            return
 
-        # Net colision detection בדיקת התנגשות ברשת
+        # Net collision detection בדיקת התנגשות ברשת
         if overlap_net := testoverlap(self.net, self):
+            self.rollback()  # Rollback position
             if overlap_net[1] < 68 * basescale:  # real net impact means ball is touched on the side
                 self.score()
-                self.rect.left -= self.dX
                 self.dX = -0.3 * self.dX
-                return
             else:  # hit top of net
                 self.dY -= 5
-                self.rect = self.rect.move(self.dX, -10 * basescale)
-                return
 
-        self.rect = newpos
-        # Player Collision testing
+        # Player Collision testing בדיקת פגיעת שחקן בכדור
         for ordinal in range(2):
             player = self.players[ordinal]
             # overlap gets the result of the collision test and then an 'if' checks overlap
-            # if there was no collision overlap will be None (i.e. False)
-            # if there is a collision, overlap contains the information.
             if overlap := testoverlap(player, self):  # EXPRESSION ASSIGNMENT
 
                 # reset num_shots of the THE OTHER PLAYER
@@ -106,17 +99,16 @@ class Ball(SharedSprite):
                 if player.num_shots > 3:
                     player.state = "3-touch"  # putting debug info here (since point is over)
                     self.score()  # give point to other side.
-                    return  # here it's just like writing else:
+                    return
 
                 self.point_started = True  # from here on gravity will apply.
-                # handle the collision:
-                # calculating the angle of collision (to bounce the ball accordingly).
-                impact_gamma = angle_ofdxdy((overlap[0] - self.dxfix, (overlap[1] - self.dyfix)))[0]
-
-                x = (self.dX, self.dY), (player.dX, player.dY)
                 # the effect of the collision is calculated by Impulse Equations.
-                # dX and dY of ball and player will be sent as input,
-                # and also be returned back from the impulse function.
+                impact_gamma = angle_ofdxdy((overlap[0] - self.dxfix, (overlap[1] - self.dyfix)))[0]
+                x = (self.dX, self.dY), (player.dX, player.dY)
                 ((self.dX, self.dY), (player.dX, player.dY)) = calc_impulse_xy1xy2(x, 1, 3.5, impact_gamma)
-                self.rect = oldpos
+
+                # rollback both Ball and Player positions
+                self.rollback(player)
+                # check no collision and break if collision to debug
+                assert not testoverlap(player, self)
                 return  # no need to check the other player.

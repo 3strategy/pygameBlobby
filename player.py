@@ -39,7 +39,6 @@ class Player(SharedSprite):
 
         self.gravity = gravity * 3
 
-
         self.reinit()
 
     def reinit(self):
@@ -52,6 +51,8 @@ class Player(SharedSprite):
         elif "right" == self.side:
             self.rect.midbottom = (self.area.midright[0] - self.initial_wall_dist, self.area.bottom)
             self.sign = -1
+
+        SharedSprite.reinit(self)
 
     def move(self, event: pygame.event):
         if event.type == KEYDOWN:  # we only want to trigger a move on keydown.
@@ -74,15 +75,13 @@ class Player(SharedSprite):
                 self.h_standstill()
 
     def update(self):
-        newpos = self.rect.move(self.dX, self.dY)
+        SharedSprite.update(self)
 
         if self.dX != 0:  # Player horisontal position checks:
             # avoid approaching the net   and avoid exiting the field
             if not Player.netApproach < abs(
-                    self.area.centerx - newpos.centerx) < self.area.centerx + Player.sideApproach:
-                # The preferred way of wrapping long lines is by using Python's
-                # implied line continuation inside parentheses, brackets and braces.
-                newpos.centerx -= self.dX
+                    self.area.centerx - self.newpos.centerx) < self.area.centerx + Player.sideApproach:
+                self.newpos.centerx -= self.dX
                 self.dX = 0
 
         if self.state == "moveup":
@@ -90,15 +89,14 @@ class Player(SharedSprite):
         else:
             self.dY += self.gravity
 
-        if newpos.bottom >= self.area.bottom:  # player touches the floor
-            newpos.bottom = self.area.bottom
+        if self.newpos.bottom >= self.area.bottom:  # player touches the floor
+            self.newpos.bottom = self.area.bottom
             if self.state == 'moveup':
                 self.dY = -self.speed
             else:
                 self.dY = 0
             self.canjump = True
 
-        self.rect = newpos
         pygame.event.pump()
 
     def moveup(self):
