@@ -11,7 +11,7 @@ class Ball(SharedSprite):
     """A ball that will move across the screen"""
 
     def __init__(self, players, net, pointer):
-        SharedSprite.__init__(self, 'VolleyGreen.png', 0.45)  # if using unusual size - use the scale to make it ok.
+        SharedSprite.__init__(self, 'VolleyGreen.png', 0.55)  # if using unusual size - use the scale to make it ok.
         self.hit = 0
         self.players = players  # type hinting is important. it helps seeing available methods in the class
         self.lastPlayer = False
@@ -93,35 +93,31 @@ class Ball(SharedSprite):
             player = self.players[ordinal]
             # overlap gets the result of the collision test and then an 'if' checks overlap
             if bestoverlap := testoverlap(player, self):  # EXPRESSION ASSIGNMENT
-                print(f'\ninitial ball:{self.newpos.center} pla:{player.newpos.center}')
-
-
+                print(f'\ninitial ball new:{self.newpos.center} old:{self.oldpos.center},\
+                    pla new:{player.newpos.center} old:{player.oldpos.center}')
+                # initial_gamma = angle_ofdxdy((bestoverlap[0] - self.dxfix, (bestoverlap[1] - self.dyfix)))[0]
 
                 # reset num_shots of the THE OTHER PLAYER
                 self.players[not ordinal].num_shots = 0
-                if not self.point_scored:player.num_shots += 1
+                if not self.point_scored:
+                    player.num_shots += 1
                 if player.num_shots > 3:
                     player.state = "3-touch"  # putting debug info here (since point is over)
-                    print (f'{datetime.now()}  ball:{self.oldpos.bottom} {self.old1.bottom} {self.old2.bottom} oldest{self.old3.bottom}')
-                    print (f'ball dY: {self.dY:.1f} {self.dY0:.1f} {self.dY1:.1f} {self.dY2:.1f} oldest: {self.dY3:.1f}')
+                    # print(f'{datetime.now()}  3touch history ball:{self.oldpos.bottom}\
+                    #     {self.old1.bottom} {self.old2.bottom} oldest{self.old3.bottom}')
+                    # print(f'bl dY:{self.dY:.1f} {self.dY0:.1f} {self.dY1:.1f} {self.dY2:.1f} oldest: {self.dY3:.1f}')
                     self.score()  # give point to other side.
                     return
 
                 # calculate best possible impact (without rolling back player:
-                self.rect = self.rect.copy()
-                no_need_to_rollback_player = False
                 for i in range(4):
                     self.rect = average_rect(self.newpos, self.oldpos)
+                    player.rect = average_rect(player.newpos, player.oldpos)
                     if overlap := testoverlap(player, self):
-                        self.newpos = self.rect
+                        self.newpos, player.newpos = self.rect, player.rect
                         bestoverlap = overlap
                     else:
-                        self.oldpos = self.rect
-                        no_need_to_rollback_player = True
-
-                self.rect = newpos #now contains the best overlap found (old pos=best non overlap)
-                if no_need_to_rollback_player:
-                    print (f'best old {self.oldpos.center} new {self.newpos.center}')
+                        self.oldpos, player.oldpos = self.rect, player.rect
 
                 weight = (300 if player.newpos.bottom == area.bottom else 3)
                 self.point_started = True  # from here on gravity will apply.
@@ -130,11 +126,14 @@ class Ball(SharedSprite):
                 x = (self.dX, self.dY), (player.dX, player.dY)
                 ((self.dX, self.dY), (player.dX, player.dY)) = calc_impulse_xy1xy2(x, 1, weight, impact_gamma)
 
+                # if abs(initial_gamma-impact_gamma) > 0.09:
+                #     print(f'\nfinal ball new:{self.newpos.center} old:{self.oldpos.center}, \
+                #     pla new:{player.newpos.center} old:{player.oldpos.center}\n\
+                #     initial gamma:{degrees(initial_gamma):.0f}->{degrees(impact_gamma):.0f}')
+                #     print('helped')
+
                 # rollback both Ball and Player positions
-                if no_need_to_rollback_player:
-                    self.rollback()
-                else:
-                    self.rollback(player)
+                self.rollback(player)
                 # check no collision and break if collision to debug
                 assert not testoverlap(player, self)
                 return  # no need to check the other player.

@@ -53,9 +53,9 @@ def main():
                 player.move(event)
 
         p0, p1 = players[0], players[1]
-        info = f'score: {p0.score}  :  {p1.score}'
-        info = f'{p0.state} {info}  {p1.state} dX:{p1.dX:.1f} dY:{p1.dY:.1f}'
-        info = f'{info} Ball dX:{ball.dX:.1f} dY:{ball.dY:.1f}'
+        info = f'{p0.score}   :   {p1.score}'
+        # info = f'{p0.state} {info}  {p1.state} dX:{p1.dX:.1f} dY:{p1.dY:.1f}'
+        # info = f'{info} Ball dX:{ball.dX:.1f} dY:{ball.dY:.1f}'
         # note the : after which comes the formatting (here .1f for 1 decimal point)
         text = font.render(info, 1, (250, 250, 250))
 

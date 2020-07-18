@@ -118,7 +118,7 @@ class Net(SharedSprite):
 
 class Pointer(SharedSprite):
     def __init__(self):
-        SharedSprite.__init__(self, 'Pointer.png')
+        SharedSprite.__init__(self, 'Pointer2.png')
         self.rect.top = self.area.top + 52 * basescale
 
 
@@ -134,8 +134,9 @@ def testoverlap(p, s):
 def average_rect(source_rect, target_rect):
     x = (target_rect.midleft[0] + source_rect.midleft[0]) / 2
     y = (target_rect.midleft[1] + source_rect.midleft[1]) / 2
-    source_rect.midleft = (x, y)
-    return source_rect
+    new_rect = source_rect.copy()
+    new_rect.midleft = (x, y)
+    return new_rect
 
 
 # ===============================================================================

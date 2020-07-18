@@ -20,17 +20,18 @@ class Player(SharedSprite):
         self.h_state = "still"
 
         self.canjump = True
+        self.num_shots = 0
         self.score = 0
 
         if side == "left":
-            SharedSprite.__init__(self, 'blobbyred.webp', 0.6)
+            SharedSprite.__init__(self, 'blobby6.webp', 0.3, True)
             self.sign = 1
             self.upKey = K_d
             self.downKey = K_LALT
             self.leftKey = K_a
             self.rightKey = K_c
         elif "right" == side:
-            SharedSprite.__init__(self, 'blobbygreen.webp', 0.4)
+            SharedSprite.__init__(self, 'blobby6.webp', 0.3)
             self.sign = -1
             self.upKey = K_UP
             self.downKey = K_DOWN
