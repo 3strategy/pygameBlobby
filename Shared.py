@@ -12,11 +12,13 @@ except ImportError as err:
     print("couldn't load module. %s" % err)
     sys.exit(2)
 
-screeny = 650#650 #650 is also good.
-screenx = 1250#1250#1580
-basescale = screeny/650 #
+screeny = 650  # 650 #650 is also good.
+screenx = 1250  # 1250#1580
+basescale = screeny / 650  #
 speed = 27 * basescale
 gravity = 0.56 * basescale
+y_compression = False
+max_ball_speed = 25
 
 # [resource handling functions here]
 def load_png(name):
@@ -36,32 +38,43 @@ def load_png(name):
 
 class SharedSprite(pygame.sprite.Sprite):
 
-    def __init__(self, imagename, scale=1,flip=False):
+    def __init__(self, imagename, scale=1, flip=False):
         pygame.sprite.Sprite.__init__(self)
         self.image = load_png(imagename)
         if flip:
-            self.image = pygame.transform.flip(self.image,True,False)
+            self.image = pygame.transform.flip(self.image, True, False)
         self.rect = self.image.get_rect()
 
-        self.image = pygame.transform.scale(self.image, (int(self.rect.width*basescale*scale), int(self.rect.height*basescale*scale)))
+        self.image = pygame.transform.scale(self.image, (
+        int(self.rect.width * basescale * scale), int(self.rect.height * basescale * scale)))
         self.rect = self.image.get_rect()
         self.oldpos = self.rect
         self.newpos = self.rect
         screen = pygame.display.get_surface()
         self.area = screen.get_rect()
-        self.area.centery -= 50 * basescale     #move logical area up
+        self.area.centery -= 50 * basescale  # move logical area up
         self.mask = pygame.mask.from_surface(self.image)  # Use `pygame.mask.from_surface` to get the masks.
         self.dX = 0.0
         self.dY = 0.0
         self.gravity = gravity
         self.initial_wall_dist = 150 * basescale
         self.boost = False
-
+        self.dY2, self.dY1, self.dY0 = 0.0,0.0,0.0 # for debug
+        self.old2, self.old1 = self.newpos, self.newpos
     def reinit(self):
         self.dX = 0.0
         self.dY = 0.0
 
     def update(self):
+        # for debug
+        self.dY3 = self.dY2
+        self.dY2 = self.dY1
+        self.dY1 = self.dY0
+        self.dY0 = self.dY
+        self.old3 = self.old2
+        self.old2 = self.old1
+        self.old1 = self.oldpos
+
         # for rolling back in case of collision
         self.oldpos = self.rect
 
@@ -72,9 +85,9 @@ class SharedSprite(pygame.sprite.Sprite):
         # Any action on newpos will move rect...(unlike before).
         self.rect = self.newpos
 
-    def rollback (self, other_object = None):
+    def rollback(self, other_object=None):
         self.rect = self.oldpos
-        self.newpos = self.oldpos
+        #self.newpos = self.oldpos
         if other_object:
             # tiny recursive call.
             # recursivity stops after 1 iteration. why?
@@ -93,19 +106,20 @@ class SharedSprite(pygame.sprite.Sprite):
             a = -1
         else:
             a = 0
-        #print (a)
+        # print (a)
         return a
 
 
 class Net(SharedSprite):
     def __init__(self):
         SharedSprite.__init__(self, 'Net1.png')
-        self.rect.midbottom = (self.area.midbottom[0],self.area.midbottom[1]+0)
+        self.rect.midbottom = (self.area.midbottom[0], self.area.midbottom[1] + 0)
+
 
 class Pointer(SharedSprite):
     def __init__(self):
         SharedSprite.__init__(self, 'Pointer.png')
-        self.rect.top = self.area.top+52*basescale
+        self.rect.top = self.area.top + 52 * basescale
 
 
 def testoverlap(p, s):
@@ -155,9 +169,17 @@ def cv1v2(ball_velocity=5.0, ball_theta=0.0, wall_velocity=0.0, wall_theta=0.0, 
     vy = (v * cos(t - g) * (m - m2) + m2v2 * cos(t2 - g)) * sin(g) / (m + m2) + v * sin(t - g) * sin(g + pi / 2)
     v2x = (v2 * cos(t2 - g) * (m2 - m) + mv * cos(t - g)) * cos(g) / (m + m2) + v2 * sin(t2 - g) * cos(g + pi / 2)
     v2y = (v2 * cos(t2 - g) * (m2 - m) + mv * cos(t - g)) * sin(g) / (m + m2) + v2 * sin(t2 - g) * sin(g + pi / 2)
+    if y_compression:
+        s = f'before: {vx:.1f} {vy:.1f} after '
+        for i in range(10):
+            if sqrt(vx * vx + vy * vy) > max_ball_speed:
+                vy *= 0.9
+                vx *= 0.98
+        s += f'{vx:.1f} {vy:.1f}'
+        print (f'{datetime.now()} input V:{v:.1f} theta:{degrees(t):.1f} {s}')
     xyxy = ((round(vx, 2), round(vy, 2)), (round(v2x, 2), round(v2y, 2)))
-    # print(f'Ball: {v1:.1f}({degrees(t1):.0f}\u2070)\t Player:{v2:.1f}({degrees(t2):.0f}\u2070),\
-    # impact angle:{degrees(g):.0f}\u2070 masses:{m1},{m2} \nresult:{xyxy}')
+    print(f'Ball: {v:.1f}({degrees(t):.0f}\u2070)\t Player:{v2:.1f}({degrees(t2):.0f}\u2070),\
+    impact angle:{degrees(g):.0f}\u2070 masses:{m},{m2} \n{datetime.now()} result:{xyxy}')
     return xyxy
 
 
