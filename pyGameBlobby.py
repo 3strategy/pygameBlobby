@@ -10,8 +10,9 @@ except ImportError as err:
 
 def main():
     # Initialise screen
-    #pygame.init()
-    screen = pygame.display.set_mode((screenx, screeny),pygame.FULLSCREEN)
+    # pygame.init()
+    # screen = pygame.display.set_mode((screenx, screeny),pygame.FULLSCREEN)
+    screen = pygame.display.set_mode((screenx, screeny))
 
     pygame.display.set_caption('Blobby')
 
@@ -22,13 +23,16 @@ def main():
     # Initialise players, net, and ball
     players = (Player("left"), Player("right"))
     net = Net()
+    boundry = Boundry()
     pointer = Pointer()
-    ball = Ball(players, net, pointer)
+    ball = Ball(players, net, pointer,boundry)
     Player.ball = ball  # give player a static reference to ball.
 
     # Initialise sprites' groups
     playersprites = pygame.sprite.RenderPlain(players)
     ballsprites = pygame.sprite.RenderPlain(ball, pointer)
+
+    othersprites = pygame.sprite.RenderPlain(boundry,net)
 
     # Display some text
     font = pygame.font.Font(None, 36)
@@ -54,6 +58,10 @@ def main():
 
         p0, p1 = players[0], players[1]
         info = f'{p0.score}   :   {p1.score}'
+        if(p0.fault != Fault.Ok):
+            info = f'{p0.fault} {info}'
+        elif (p1.fault != Fault.Ok):
+            info = f'{info}  {p1.fault}'
         # info = f'{p0.state} {info}  {p1.state} dX:{p1.dX:.1f} dY:{p1.dY:.1f}'
         # info = f'{info} Ball dX:{ball.dX:.1f} dY:{ball.dY:.1f}'
         # note the : after which comes the formatting (here .1f for 1 decimal point)
@@ -62,9 +70,11 @@ def main():
         screen.blit(background, (0, 0))  # this acts as a clear screen (try without and see how everything smears)
         screen.blit(text, textpos)  # if we blit to background we are smearing.
 
+        othersprites.update()
         playersprites.update()  # it matters if you update the player before or after the ball.
         ballsprites.update()  # calls the update method on sprite
 
+        othersprites.draw(screen)
         playersprites.draw(screen)
         ballsprites.draw(screen)  # blits every sprite to the screen.
 

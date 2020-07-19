@@ -1,8 +1,6 @@
 # classes Bat, and Net
 try:
     from Shared import *
-    from enum import Enum
-
 
 except ImportError as err:
     print("couldn't load module. %s" % err)
@@ -45,6 +43,7 @@ class Player(SharedSprite):
         self.reinit()
 
     def reinit(self):
+        self.fault = Fault.Ok
         self.canjump = True
         self.num_shots = 0
         self.state = State.Still
@@ -138,11 +137,7 @@ class Player(SharedSprite):
     def weight(self):
         """calculates weight. The idea is that player is heavier when on the ground.
         can hit harder and bounce less"""
-        return (300 if self.rect.bottom == self.area.bottom else 3)
+        return 300 if self.rect.bottom == self.area.bottom else 3
 
-class State(Enum):
-    MoveUp = 0
-    MoveDown = 1
-    MoveRight = 2
-    MoveLeft = 3
-    Still = 4
+
+
