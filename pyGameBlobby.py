@@ -10,8 +10,8 @@ except ImportError as err:
 
 def main():
     # Initialise screen
-    pygame.init()
-    screen = pygame.display.set_mode((screenx, screeny))
+    #pygame.init()
+    screen = pygame.display.set_mode((screenx, screeny),pygame.FULLSCREEN)
 
     pygame.display.set_caption('Blobby')
 
@@ -45,7 +45,7 @@ def main():
         clock.tick(54)
 
         for event in pygame.event.get():
-            if event.type == QUIT:
+            if event.type == QUIT or event.type == KEYDOWN and  event.key == K_ESCAPE:
                 return
             # OOP:Don't ask for the information you need to do the work;
             # ask for the object that has information to do the work for you. (Allen Hollub)

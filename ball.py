@@ -64,12 +64,12 @@ class Ball(SharedSprite):
             self.score()
 
             # once point was scored, start a new point when ball settles down
-            if -2 < self.dY < 2:
+            if -2 * basescale < self.dY < 2 * basescale:
                 self.reinit()
                 return  # a crucial return.
 
         # Test if flying too high בדיקה אם הכדור עף גבוה מדי
-        elif newpos.top < -300 * basescale and self.dY < 0:
+        elif newpos.top < -250 * basescale and self.dY < 0:
             print(f'sky high {newpos.top} dX:{self.dX:.1f} dY:{self.dY:.1f}')
             newpos.top -= self.dY
             self.dY = -self.dY

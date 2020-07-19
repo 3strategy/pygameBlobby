@@ -12,9 +12,13 @@ except ImportError as err:
     print("couldn't load module. %s" % err)
     sys.exit(2)
 
-screeny = 650  # 650 #650 is also good.
-screenx = 1250  # 1250#1580
-basescale = screeny / 650  #
+pygame.init()
+infoObject = pygame.display.Info()
+#pygame.display.set_mode((infoObject.current_w, infoObject.current_h))
+
+screeny =  infoObject.current_h  # 650 #650 is also good.
+screenx =  infoObject.current_w  # 1250#1580
+basescale = sqrt(screeny*screenx / (650*1250))  #
 speed = 27 * basescale
 gravity = 0.56 * basescale
 y_compression = False
@@ -38,11 +42,13 @@ def load_png(name):
 
 class SharedSprite(pygame.sprite.Sprite):
 
-    def __init__(self, imagename, scale=1, flip=False):
+    def __init__(self, imagename, scale=1, flip=False, rotate_angle = 0):
         pygame.sprite.Sprite.__init__(self)
         self.image = load_png(imagename)
         if flip:
             self.image = pygame.transform.flip(self.image, True, False)
+        if rotate_angle:
+            self.image = pygame.transform.rotate(self.image, rotate_angle)
         self.rect = self.image.get_rect()
 
         self.image = pygame.transform.scale(self.image, (
