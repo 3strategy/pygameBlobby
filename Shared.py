@@ -15,15 +15,16 @@ except ImportError as err:
 
 pygame.init()
 infoObject = pygame.display.Info()
-#pygame.display.set_mode((infoObject.current_w, infoObject.current_h))
+# pygame.display.set_mode((infoObject.current_w, infoObject.current_h))
 
-screeny =  650 #infoObject.current_h  # 650 #650 is also good.
-screenx =  1250 #infoObject.current_w  # 1250#1580
-basescale = sqrt(screeny*screenx / (650*1250))  #
+screeny = 650  # infoObject.current_h  # 650 #650 is also good.
+screenx = 1250  # infoObject.current_w  # 1250#1580
+basescale = sqrt(screeny * screenx / (650 * 1250))  #
 speed = 27 * basescale
 gravity = 0.56 * basescale
 y_compression = False
 max_ball_speed = 25
+
 
 # [resource handling functions here]
 def load_png(name):
@@ -43,7 +44,7 @@ def load_png(name):
 
 class SharedSprite(pygame.sprite.Sprite):
 
-    def __init__(self, imagename, scale=1, flip=False, rotate_angle = 0):
+    def __init__(self, imagename, scale=1, flip=False, rotate_angle=0):
         pygame.sprite.Sprite.__init__(self)
         self.image = load_png(imagename)
         if flip:
@@ -53,7 +54,7 @@ class SharedSprite(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
 
         self.image = pygame.transform.scale(self.image, (
-        int(self.rect.width * basescale * scale), int(self.rect.height * basescale * scale)))
+            int(self.rect.width * basescale * scale), int(self.rect.height * basescale * scale)))
         self.rect = self.image.get_rect()
         self.oldpos = self.rect
         self.newpos = self.rect
@@ -68,25 +69,16 @@ class SharedSprite(pygame.sprite.Sprite):
         self.gravity = gravity
         self.initial_wall_dist = 150 * basescale
         self.boost = False
-        self.dY2, self.dY1, self.dY0 = 0.0,0.0,0.0 # for debug
+        self.dY2, self.dY1, self.dY0 = 0.0, 0.0, 0.0  # for debug
         self.old2, self.old1 = self.newpos, self.newpos
+
     def reinit(self):
         self.dX = 0.0
         self.dY = 0.0
 
     def update(self):
-        # for debug
-        self.dY3 = self.dY2
-        self.dY2 = self.dY1
-        self.dY1 = self.dY0
-        self.dY0 = self.dY
-        self.old3 = self.old2
-        self.old2 = self.old1
-        self.old1 = self.oldpos
-
         # for rolling back in case of collision
         self.oldpos = self.rect
-
         # move Create a copy of rect. Only the copy is moved to the new pos.
         self.newpos = self.rect.move(self.dX, self.dY)
 
@@ -96,28 +88,27 @@ class SharedSprite(pygame.sprite.Sprite):
 
     def bestoverlap(self, player):
         if bestoverlap := testoverlap(player, self):
-            self.orgpos, player.orgpos = self.oldpos, player.oldpos
-            print (f'overlap 0:{bestoverlap}')
+            print(f'overlap 0:{bestoverlap}')
             # calculate best possible impact (without rolling back player:
             for i in range(7):
                 self.rect = average_rect(self.newpos, self.oldpos)
                 player.rect = average_rect(player.newpos, player.oldpos)
                 if overlap := testoverlap(player, self):
                     self.newpos, player.newpos = self.rect, player.rect
-                    if bestoverlap==overlap:
-                        break
+                    if bestoverlap == overlap:
+                        break  # stop the 7 iterations as early as possible.
                     bestoverlap = overlap
-                    if isinstance(player,Boundry):
+                    if isinstance(player, Boundry):
                         print(f'overlap {i}:{bestoverlap}')
                 else:
                     self.oldpos, player.oldpos = self.rect, player.rect
             return bestoverlap
         return None
 
-    def process_impact (self,player,bestoverlap):
+    def process_impact(self, player, bestoverlap):
         # the effect of the collision is calculated by Impulse Equations.
         impact_gamma = angle_ofdxdy((bestoverlap[0] - self.dxfix, (bestoverlap[1] - self.dyfix)))[0]
-        ((self.dX, self.dY), (player.dX, player.dY)) = calc_impulse_new(self,player,impact_gamma)
+        ((self.dX, self.dY), (player.dX, player.dY)) = calc_impulse_new(self, player, impact_gamma)
         # self.rollback(player)
         # assert not testoverlap(player, self)
 
@@ -126,7 +117,8 @@ class SharedSprite(pygame.sprite.Sprite):
         if other_object:
             other_object.rollback()
 
-    def accellerate(self, initialspeed, profile):
+    @staticmethod
+    def accellerate(initialspeed, profile):
         # apply acceleration function:
         y = initialspeed
         if profile == 1:
@@ -134,7 +126,8 @@ class SharedSprite(pygame.sprite.Sprite):
         elif profile == 2:
             a = -0.00000536 * y ** 4 - 0.000177438 * y ** 3 - 0.00168125 * y ** 2 - 0.0500764 * y - 1
         elif profile == 3:
-            a = 0.000001421 * y ** 5 + 0.00000749 * y ** 4 - 0.000827811 * y ** 3 - 0.00374945 * y ** 2 + 0.0185639 * y - 1
+            a = 0.000001421 * y ** 5 + 0.00000749\
+                * y ** 4 - 0.000827811 * y ** 3 - 0.00374945 * y ** 2 + 0.0185639 * y - 1
         elif profile == 4:
             a = -1
         else:
@@ -149,7 +142,8 @@ class SharedSprite(pygame.sprite.Sprite):
 
     @property
     def vector(self):
-        return angle_ofdxdy((self.dX,self.dY))
+        return angle_ofdxdy((self.dX, self.dY))
+
 
 class Net(SharedSprite):
     def __init__(self):
@@ -162,7 +156,8 @@ class Net(SharedSprite):
         return 2
 
     def update(self):
-        self.dY,self.dX = 0, 0
+        self.dY, self.dX = 0, 0
+
 
 class Boundry(SharedSprite):
     def __init__(self):
@@ -175,7 +170,8 @@ class Boundry(SharedSprite):
         return 10
 
     def update(self):
-        self.dY,self.dX = 0, 0
+        self.dY, self.dX = 0, 0
+
 
 class Pointer(SharedSprite):
     def __init__(self):
@@ -212,9 +208,9 @@ def angle_ofdxdy(dxdy):  # returns angle, z
     return round(angle, 4), z
 
 
-def calc_impulse_new(self,wall,gama):
+def calc_impulse_new(self, wall, gama):
     g = gama  # 0 needs further explainig. ba
-    vec,vec_wall = self.vector, wall.vector
+    vec, vec_wall = self.vector, wall.vector
     t, t2 = vec[0], vec_wall[0]
     v, v2 = vec[1], vec_wall[1]  # a scalar.
     m, m2 = self.weight, wall.weight
@@ -232,11 +228,13 @@ def calc_impulse_new(self,wall,gama):
         s += f'{vx:.1f} {vy:.1f}'
         print(f'{datetime.now()} input V:{v:.1f} theta:{degrees(t):.1f} {s}')
     xyxy = ((round(vx, 2), round(vy, 2)), (round(v2x, 2), round(v2y, 2)))
-    types = type(self)
-    typewall = type (wall)
-    print(f'\n{datetime.now()} \n{types}: {v:.1f}({degrees(t):.1f}\u2070)\t {typewall}:{v2:.1f}({degrees(t2):.1f}\u2070),\
-        impact angle:{degrees(g):.2f}\u2070 masses:{m},{m2} result:{xyxy}')
+    type_s = type(self)
+    type_wall = type(wall)
+    print(f'\n{datetime.now()}'  # note the inferred multiline usage.
+          f' \n{type_s}: {v:.1f}({degrees(t):.1f}\u2070)\t {type_wall}:{v2:.1f} ({degrees(t2):.1f}\u2070),'
+          f'\nimpact angle:{degrees(g):.2f}\u2070 masses:{m},{m2} result:{xyxy}')
     return xyxy
+
 
 class State(Enum):
     MoveUp = 0
@@ -245,8 +243,10 @@ class State(Enum):
     MoveLeft = 3
     Still = 4
 
+
 class Fault(Enum):
     Ok = 0
     Floor = 1
     Net = 2
     Touch3 = 3
+    Won = 4

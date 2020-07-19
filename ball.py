@@ -1,7 +1,6 @@
 # class Ball
 try:
-    from Shared import *
-    # from player import *
+    from player import *
 except ImportError as err:
     print("couldn't load module. %s" % err)
     sys.exit(2)
@@ -13,7 +12,8 @@ class Ball(SharedSprite):
     def __init__(self, players, net, pointer, boundry):
         SharedSprite.__init__(self, 'VolleyGreenBig.png', 0.555)  # if using unusual size - use the scale to make it ok.
         self.hit = 0
-        self.players = players  # type hinting is important. it helps seeing available methods in the class
+        self.players: tuple[
+            Player] = players  # type hinting is important. it helps seeing available methods in the class
         self.lastPlayer = False
         self.point_started = False
         self.point_scored = False
@@ -41,11 +41,16 @@ class Ball(SharedSprite):
     def score(self, fault):
         ordinal = self.area.centerx > self.rect.centerx
         if not self.point_scored:  # prevent double scoring
+            if fault is Fault.Net and self.players[not ordinal].num_shots == 0:
+                return  # ignore net fault if player has not touched the ball yet.
             self.players[not ordinal].fault = fault
             if ordinal == self.lastPlayer:  # ball holder lost the point - switch ball.
                 self.lastPlayer = not self.lastPlayer
             else:
-                self.players[ordinal].score += 1
+                p: Player = self.players[ordinal]
+                p.score += 1
+                if p.score > 14 and p.score - self.players[not ordinal].score > 1:
+                    p.fault = Fault.Won
             self.point_scored = True
 
     def update(self, *args):
@@ -57,7 +62,7 @@ class Ball(SharedSprite):
         if self.point_started and self.dY < 14 * basescale:
             self.dY += self.gravity
 
-        #All boundry tests run via Impulse Equations.
+        # All boundry tests run via Impulse Equations.
         if bestoverlap := self.bestoverlap(self.boundry):
             self.process_impact(self.boundry, bestoverlap)
             if bestoverlap[1] > 75 * basescale:  # means ball touched the floor
@@ -67,41 +72,14 @@ class Ball(SharedSprite):
                 if -2 * basescale < self.dY < 2 * basescale:
                     self.reinit()
                     return
-        """
-        # Test if touching the floor האם הכדור נוגע ברצפה
-        if newpos.bottom >= area.bottom:  # Ball touches the floor
-            newpos.bottom = area.bottom  # repositioning to a valid position.
-            self.dY = -0.6 * self.dY
-            self.score()
-
-            # once point was scored, start a new point when ball settles down
-            if -2 * basescale < self.dY < 2 * basescale:
-                self.reinit()
-                return  # a crucial return.
-
-        # Test if flying too high בדיקה אם הכדור עף גבוה מדי
-        elif newpos.top < -250 * basescale and self.dY < 0:
-            print(f'sky high {newpos.top} dX:{self.dX:.1f} dY:{self.dY:.1f}')
-            newpos.top -= self.dY
-            self.dY = -self.dY
-
-        # Ball off court's sides: בדיקה אם הכדור פוגע בקירות
-        if (newpos.right > area.right and self.dX > 0) or (newpos.left < 0 and self.dX < 0):
-            newpos.left -= self.dX
-            self.dX = -self.dX
-        """
 
         # Net collision detection בדיקת התנגשות ברשת
         if bestoverlap := self.bestoverlap(self.net):  # testoverlap(self.net, self):
-            #self.rollback()  # Rollback position
 
-            tempDx = self.dX
+            temp_dx = self.dX
             self.process_impact(self.boundry, bestoverlap)
-            if(self.dX * tempDx < 0): # means ball bounced back
+            if self.dX * temp_dx < 0:  # means ball bounced back
                 self.score(Fault.Net)
-                #self.dX = -0.3 * self.dX
-            #else:  # hit top of net
-             #   self.dY -= 5
 
         # Player Collision testing בדיקת פגיעת שחקן בכדור
         for ordinal in range(2):

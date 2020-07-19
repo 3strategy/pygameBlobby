@@ -18,7 +18,7 @@ class Player(SharedSprite):
         self.horisontal_speed = speed * 0.3
         self.state = State.Still
         self.h_state = State.Still
-
+        self.__fault: Fault = Fault.Ok
         self.canjump = True
         self.num_shots = 0
         self.score = 0
@@ -43,7 +43,9 @@ class Player(SharedSprite):
         self.reinit()
 
     def reinit(self):
-        self.fault = Fault.Ok
+
+        if self.fault != Fault.Won:
+            self.fault = Fault.Ok
         self.canjump = True
         self.num_shots = 0
         self.state = State.Still
@@ -139,5 +141,15 @@ class Player(SharedSprite):
         can hit harder and bounce less"""
         return 300 if self.rect.bottom == self.area.bottom else 3
 
+    @property
+    def fault(self):
+        """explanation of lost point"""
+        return self.__fault
 
-
+    @fault.setter
+    def fault(self, val):
+        # prevent overwriting state Won.
+        if self.__fault == Fault.Won:
+            return
+        else:
+            self.__fault = val

@@ -1,6 +1,7 @@
 # game class (main)
 try:
     import sys
+    import re
     from player import *
     from ball import *
 except ImportError as err:
@@ -25,14 +26,14 @@ def main():
     net = Net()
     boundry = Boundry()
     pointer = Pointer()
-    ball = Ball(players, net, pointer,boundry)
+    ball = Ball(players, net, pointer, boundry)
     Player.ball = ball  # give player a static reference to ball.
 
     # Initialise sprites' groups
     playersprites = pygame.sprite.RenderPlain(players)
     ballsprites = pygame.sprite.RenderPlain(ball, pointer)
 
-    othersprites = pygame.sprite.RenderPlain(boundry,net)
+    othersprites = pygame.sprite.RenderPlain(boundry, net)
 
     # Display some text
     font = pygame.font.Font(None, 36)
@@ -49,7 +50,7 @@ def main():
         clock.tick(54)
 
         for event in pygame.event.get():
-            if event.type == QUIT or event.type == KEYDOWN and  event.key == K_ESCAPE:
+            if event.type == QUIT or event.type == KEYDOWN and event.key == K_ESCAPE:
                 return
             # OOP:Don't ask for the information you need to do the work;
             # ask for the object that has information to do the work for you. (Allen Hollub)
@@ -58,10 +59,12 @@ def main():
 
         p0, p1 = players[0], players[1]
         info = f'{p0.score}   :   {p1.score}'
-        if(p0.fault != Fault.Ok):
-            info = f'{p0.fault} {info}'
-        elif (p1.fault != Fault.Ok):
-            info = f'{info}  {p1.fault}'
+        if p0.fault != Fault.Ok:
+            fl = re.search(r'((\w*)\.(\w*))', f'{p0.fault}').group(3)
+            info = f'{fl} {info}'
+        elif p1.fault != Fault.Ok:
+            fl = re.search(r'((\w*)\.(\w*))', str(p1.fault)).group(3)
+            info = f'{info}  {fl}'
         # info = f'{p0.state} {info}  {p1.state} dX:{p1.dX:.1f} dY:{p1.dY:.1f}'
         # info = f'{info} Ball dX:{ball.dX:.1f} dY:{ball.dY:.1f}'
         # note the : after which comes the formatting (here .1f for 1 decimal point)
@@ -74,7 +77,7 @@ def main():
         playersprites.update()  # it matters if you update the player before or after the ball.
         ballsprites.update()  # calls the update method on sprite
 
-        othersprites.draw(screen)
+        # othersprites.draw(screen)
         playersprites.draw(screen)
         ballsprites.draw(screen)  # blits every sprite to the screen.
 
