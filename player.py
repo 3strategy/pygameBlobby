@@ -134,6 +134,12 @@ class Player(SharedSprite):
             self.dX = 0
             self.__h_state = State.Still
 
+    @property
+    def weight(self):
+        """calculates weight. The idea is that player is heavier when on the ground.
+        can hit harder and bounce less"""
+        return (300 if self.rect.bottom == self.area.bottom else 3)
+
 class State(Enum):
     MoveUp = 0
     MoveDown = 1

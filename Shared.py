@@ -56,6 +56,8 @@ class SharedSprite(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.oldpos = self.rect
         self.newpos = self.rect
+        self.dyfix = self.rect.height / 2
+        self.dxfix = self.rect.width / 2
         screen = pygame.display.get_surface()
         self.area = screen.get_rect()
         self.area.centery -= 50 * basescale  # move logical area up
@@ -91,6 +93,35 @@ class SharedSprite(pygame.sprite.Sprite):
         # Any action on newpos will move rect...(unlike before).
         self.rect = self.newpos
 
+    def bestoverlap(self, player):
+        if bestoverlap := testoverlap(player, self):
+            # calculate best possible impact (without rolling back player:
+            for i in range(4):
+                self.rect = average_rect(self.newpos, self.oldpos)
+                player.rect = average_rect(player.newpos, player.oldpos)
+                if overlap := testoverlap(player, self):
+                    self.newpos, player.newpos = self.rect, player.rect
+                    bestoverlap = overlap
+                else:
+                    self.oldpos, player.oldpos = self.rect, player.rect
+            return bestoverlap
+        return None
+
+    def process_impact (self,player,bestoverlap):
+        # the effect of the collision is calculated by Impulse Equations.
+        impact_gamma = angle_ofdxdy((bestoverlap[0] - self.dxfix, (bestoverlap[1] - self.dyfix)))[0]
+        x = (self.dX, self.dY), (player.dX, player.dY)
+        ((self.dX, self.dY), (player.dX, player.dY)) = calc_impulse_xy1xy2(x, self.weight, player.weight, impact_gamma)
+        # if abs(initial_gamma-impact_gamma) > 0.09:
+        #     print(f'\nfinal ball new:{self.newpos.center} old:{self.oldpos.center}, \
+        #     pla new:{player.newpos.center} old:{player.oldpos.center}\n\
+        #     initial gamma:{degrees(initial_gamma):.0f}->{degrees(impact_gamma):.0f}')
+        #     print('helped')
+
+        # rollback both Ball and Player positions
+        self.rollback(player)
+        assert not testoverlap(player, self)
+
     def rollback(self, other_object=None):
         self.rect = self.oldpos
         #self.newpos = self.oldpos
@@ -115,6 +146,10 @@ class SharedSprite(pygame.sprite.Sprite):
         # print (a)
         return a
 
+    @property
+    def weight(self):
+        """calculates weight"""
+        return 1
 
 class Net(SharedSprite):
     def __init__(self):
@@ -135,6 +170,9 @@ def testoverlap(p, s):
     offset_y = p.rect.y - s.rect.y
     overlap = s.mask.overlap(p.mask, (offset_x, offset_y))
     return overlap
+
+
+
 
 
 def average_rect(source_rect, target_rect):
