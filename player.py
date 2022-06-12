@@ -26,10 +26,10 @@ class Player(SharedSprite):
         if side == "left":
             SharedSprite.__init__(self, 'blobby6.webp', 0.3, True)
             self.sign = 1
-            self.upKey = K_d
-            self.downKey = K_LALT
+            self.upKey = K_w
+            self.downKey = K_s
             self.leftKey = K_a
-            self.rightKey = K_c
+            self.rightKey = K_d
         elif "right" == side:
             SharedSprite.__init__(self, 'blobbygreen.webp', 0.5)
             self.sign = -1
